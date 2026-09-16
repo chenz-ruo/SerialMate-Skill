@@ -1,0 +1,57 @@
+---
+name: serialmate-skill
+description: Use SerialMate CLI for safe serial-port discovery, instance selection, open/close, send, and read workflows. Apply when a user asks to inspect COM devices, communicate with an MCU/RS-485 board, or test hardware over a serial connection; do not use it to replace SerialMate, implement a driver, or parse application protocols.
+---
+
+# SerialMate Skill v1.0.0
+
+SerialMate-Skill is guidance for calling the user's installed SerialMate CLI. It is not the SerialMate application and must not become a second serial implementation.
+
+## When to use
+
+Prefer this skill for:
+
+- discovering serial devices or COM ports;
+- opening or closing a COM port;
+- sending hexadecimal bytes or text;
+- waiting for and reading device responses;
+- testing hardware boards, MCU UARTs, or RS-485 devices.
+
+Do not use Python serial libraries, pyserial, a custom driver, or an invented protocol to bypass SerialMate.
+
+## Required workflow
+
+For every serial operation, follow this order:
+
+1. Discover the executable.
+2. Identify the target SerialMate instance.
+3. Run `status` and confirm the state.
+4. Perform the requested operation.
+5. Read and report the result.
+
+Discover `SerialMate.exe` in this order: `SERIALMATE_EXE`, then `PATH`, then an explicit path supplied by the user. If it cannot be found, say so clearly; do not download or run an unknown executable.
+
+Use `--list-ports` to confirm the COM number, device name, and VID/PID. Use `--list-instances` to identify running instances. Never guess a COM port or reuse a historical port without checking it. If the target instance is known, address it with `--pid` and verify its `instanceId` with `status`.
+
+The frozen baseline is `AutomationProtocolVersion=1`. Supported operations are `--list-instances`, `--list-ports`, `ping`, `capabilities`, `status`, `open`, `close`, `send-hex`, `send-text`, and `read`. One SerialMate process owns at most one COM port; use distinct instances for multiple COM ports.
+
+## Instance and read cursor rules
+
+Track each target independently as:
+
+```text
+{ pid, instanceId, port, lastSeq }
+```
+
+Never use a global “current serial port”, and never mix sequence values between instances. Before sending, run `status` and save that instance's `lastSeq`; after `send-hex` or `send-text`, read with `--afterSeq <saved-lastSeq>` so only newer records are considered. `read --afterSeq N` means sequence values greater than `N`.
+
+If a read result reports `truncated=true`, explicitly tell the user that older history was evicted from the bounded buffer and the response is incomplete. Treat returned HEX as the authoritative raw data; TEXT is a convenience display when encoding is known.
+
+## Safety and errors
+
+Do not automatically close other instances. When multiple instances could match and the user has not identified one, stop and ask which `pid`/`instanceId` to use. Do not send dangerous commands without user authorization.
+
+Branch on `error.code`, not on message wording. Recommended actions for the baseline error codes are in [references/ERROR_HANDLING.md](references/ERROR_HANDLING.md). Read [references/CLI.md](references/CLI.md) for command-shape guidance, [references/MULTI_INSTANCE.md](references/MULTI_INSTANCE.md) for concurrent devices, and [references/EXAMPLES.md](references/EXAMPLES.md) for end-to-end workflows.
+
+Keep interface details aligned with the upstream SerialMate `AUTOMATION.md`, `AUTOMATION_PROTOCOL.md`, `SerialMate.exe --help`, and `SerialMate.exe capabilities`. Do not assume capabilities that are not confirmed by those public interfaces.
+
