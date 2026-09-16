@@ -1,6 +1,6 @@
 # 错误处理参考
 
-根据结构化的 `error.code` 分支，不依赖易变的 message 文本。下面的动作是 v1 工作流建议；具体字段和退出码以 `AUTOMATION_PROTOCOL.md` 为准。
+根据结构化的 `error.code` 分支，不依赖易变的 message 文本。下面的动作是 Automation Protocol v1 工作流建议；具体字段和退出码以 `AUTOMATION_PROTOCOL.md` 为准。
 
 | `error.code` | 推荐动作 |
 |---|---|
