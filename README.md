@@ -43,7 +43,7 @@ scripts/
 .\scripts\check_serialmate.ps1 -ExecutablePath 'C:\\Tools\\SerialMate.exe'
 ```
 
-脚本只检查可执行文件、运行 `--help` 和 `--list-instances`，不会打开或关闭任何 COM 口。
+脚本只检查可执行文件与版本，并以 10 秒超时运行 `--help` 和 `--list-instances`；不会打开或关闭任何 COM 口。
 
 ## 来源维护
 
