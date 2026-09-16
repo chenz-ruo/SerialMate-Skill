@@ -31,7 +31,9 @@ For every serial operation, follow this order:
 
 Discover `SerialMate.exe` in this order: `SERIALMATE_EXE`, then `PATH`, then an explicit path supplied by the user. If it cannot be found, say so clearly; do not download or run an unknown executable.
 
-Use `--list-ports` to confirm the COM number, device name, and VID/PID. Use `--list-instances` to identify running instances. Never guess a COM port or reuse a historical port without checking it. If the target instance is known, address it with `--pid` and verify its `instanceId` with `status`.
+Use `--list-ports` to confirm the COM number and device name; do not assume undocumented VID/PID fields. Use `--list-instances` to identify running instances. Never guess a COM port or reuse a historical port without checking it. If the target instance is known, address it with `--pid` and verify its `instanceId` with `status` or `ping`.
+
+`open`, `close`, `send-hex`, `send-text` and `read` must include the matching `--instanceId` as well as `--pid`. A missing ID is `instance_id_required`; a stale or mismatched ID is `instance_mismatch`, and neither should cause a side effect.
 
 The frozen baseline is `AutomationProtocolVersion=1`. Supported operations are `--list-instances`, `--list-ports`, `ping`, `capabilities`, `status`, `open`, `close`, `send-hex`, `send-text`, and `read`. One SerialMate process owns at most one COM port; use distinct instances for multiple COM ports.
 
@@ -43,9 +45,9 @@ Track each target independently as:
 { pid, instanceId, port, lastSeq }
 ```
 
-Never use a global “current serial port”, and never mix sequence values between instances. Before sending, run `status` and save that instance's `lastSeq`; after `send-hex` or `send-text`, read with `--afterSeq <saved-lastSeq>` so only newer records are considered. `read --afterSeq N` means sequence values greater than `N`.
+Never use a global “current serial port”, and never mix sequence values between instances. Before sending, run `status`, then establish or reuse that instance's cursor from a read result's `lastSeq`; after `send-hex` or `send-text`, read with `--afterSeq <saved-lastSeq>` so only newer records are considered. `read --afterSeq N` means sequence values greater than `N`.
 
-If a read result reports `truncated=true`, explicitly tell the user that older history was evicted from the bounded buffer and the response is incomplete. Treat returned HEX as the authoritative raw data; TEXT is a convenience display when encoding is known.
+If a read result reports `truncated=true`, explicitly tell the user that older history was evicted from the bounded buffer and the response is incomplete. Follow `more`/`nextAfter` for pagination. A waited read that returns `timedOut=true` with `ok=true` is a successful empty wait, not an error. Treat returned HEX as the authoritative raw data; TEXT is a convenience display when encoding is known.
 
 ## Safety and errors
 
