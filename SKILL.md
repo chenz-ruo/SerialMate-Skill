@@ -3,7 +3,7 @@ name: serialmate-skill
 description: Use SerialMate CLI for safe serial-port discovery, instance selection, open/close, send, and read workflows. Apply when a user asks to inspect COM devices, communicate with an MCU/RS-485 board, or test hardware over a serial connection; do not use it to replace SerialMate, implement a driver, or parse application protocols.
 ---
 
-# SerialMate Skill v1.0.0
+# SerialMate Skill v1.0.1
 
 SerialMate-Skill is guidance for calling the user's installed SerialMate CLI. It is not the SerialMate application and must not become a second serial implementation.
 
@@ -23,13 +23,27 @@ Do not use Python serial libraries, pyserial, a custom driver, or an invented pr
 
 For every serial operation, follow this order:
 
-1. Discover the executable.
+1. Discover a running instance first, then locate the executable if needed.
 2. Identify the target SerialMate instance.
 3. Run `status` and confirm the state.
 4. Perform the requested operation.
 5. Read and report the result.
 
-Discover `SerialMate.exe` in this order: `SERIALMATE_EXE`, then `PATH`, then an explicit path supplied by the user. If it cannot be found, say so clearly; do not download or run an unknown executable.
+## Discovery workflow
+
+Prefer a running SerialMate GUI over path discovery. Enumerate running `SerialMate.exe` processes, obtain their executable paths, and use a running path to execute `--list-instances`. If the response contains an instance, use Automation directly; do not ask the user for the executable path or require PATH configuration.
+
+If no running instance is available, locate `SerialMate.exe` in this order:
+
+1. `SERIALMATE_EXE`.
+2. `PATH`.
+3. `C:\Program Files\SerialMate\SerialMate.exe`.
+4. `%LOCALAPPDATA%\SerialMate\SerialMate.exe`.
+5. `tools\SerialMate.exe`, then `bin\SerialMate.exe`, under the current working directory.
+
+Also accept an explicit path already supplied by the user. When an executable is found but no instance is running, start SerialMate, wait up to 10 seconds for Automation to become available, and run `--list-instances` again. Starting the GUI does not authorize opening a port or sending data.
+
+Only after instance detection and all executable locations fail, say: `未找到SerialMate。请安装SerialMate或提供SerialMate.exe路径。` Do not require the user to add SerialMate to PATH, and do not download or run an unknown executable.
 
 Use `--list-ports` to confirm the COM number and device name; do not assume undocumented VID/PID fields. Use `--list-instances` to identify running instances. Never guess a COM port or reuse a historical port without checking it. If the target instance is known, address it with `--pid` and verify its `instanceId` with `status` or `ping`.
 

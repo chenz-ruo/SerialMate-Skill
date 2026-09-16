@@ -58,3 +58,17 @@ SerialMate.exe --list-instances
 
 停止发送，重新执行 `--list-ports` 和 `--list-instances`。确认设备重新出现且实例身份匹配后，再 `status`、`open`，并从新的 `lastSeq` 开始读取。若实例已退出，按 `instance_not_found` 处理，不自动关闭或替换其它实例。
 
+## Discovery Policy 测试案例
+
+### Case 1：SerialMate GUI 已打开
+
+环境中没有 `SERIALMATE_EXE`，PATH 中也没有 SerialMate。应从运行进程取得 `SerialMate.exe` 路径，执行 `--list-instances` 并直接使用返回实例；不得要求用户重复提供路径。
+
+### Case 2：没有 GUI 实例但 EXE 存在
+
+按标准位置找到 `SerialMate.exe` 后启动 SerialMate，最多等待 10 秒，再执行 `--list-instances`。Automation 可用后继续原任务；不得启动多个重复实例。
+
+### Case 3：实例和 EXE 都不存在
+
+完成全部搜索后停止，并提示：`未找到SerialMate。请安装SerialMate或提供SerialMate.exe路径。` 不要求必须加入 PATH，也不自动下载程序。
+

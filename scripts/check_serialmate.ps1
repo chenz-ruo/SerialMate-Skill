@@ -18,6 +18,31 @@ function Write-CheckResult {
 }
 
 function Resolve-SerialMate {
+    $runningPaths = @(
+        Get-Process -Name 'SerialMate' -ErrorAction SilentlyContinue |
+            Sort-Object -Property Id |
+            ForEach-Object {
+                try { $_.Path } catch { $null }
+            } |
+            Where-Object { $_ -and (Test-Path -LiteralPath $_ -PathType Leaf) } |
+            Select-Object -Unique
+    )
+
+    foreach ($runningPath in $runningPaths) {
+        try {
+            $instanceCheck = Invoke-SerialMateCheck -Path $runningPath -Argument '--list-instances'
+            if (-not $instanceCheck.TimedOut -and $instanceCheck.ExitCode -eq 0) {
+                $instanceResponse = $instanceCheck.Output | ConvertFrom-Json
+                if ($instanceResponse.ok -and @($instanceResponse.instances).Count -gt 0) {
+                    return $runningPath
+                }
+            }
+        }
+        catch {
+            continue
+        }
+    }
+
     if ($env:SERIALMATE_EXE) {
         $fromEnvironment = Resolve-Path -LiteralPath $env:SERIALMATE_EXE -ErrorAction SilentlyContinue
         if ($fromEnvironment) { return $fromEnvironment.Path }
@@ -25,6 +50,19 @@ function Resolve-SerialMate {
 
     $fromPath = Get-Command 'SerialMate.exe' -CommandType Application -ErrorAction SilentlyContinue
     if ($fromPath) { return $fromPath.Source }
+
+    $candidatePaths = @(
+        'C:\Program Files\SerialMate\SerialMate.exe'
+        $(if ($env:LOCALAPPDATA) { Join-Path $env:LOCALAPPDATA 'SerialMate\SerialMate.exe' })
+        (Join-Path (Get-Location).Path 'tools\SerialMate.exe')
+        (Join-Path (Get-Location).Path 'bin\SerialMate.exe')
+    ) | Where-Object { $_ }
+
+    foreach ($candidatePath in $candidatePaths) {
+        if (Test-Path -LiteralPath $candidatePath -PathType Leaf) {
+            return (Resolve-Path -LiteralPath $candidatePath).Path
+        }
+    }
 
     if ($ExecutablePath) {
         return (Resolve-Path -LiteralPath $ExecutablePath -ErrorAction SilentlyContinue).Path
@@ -82,7 +120,7 @@ Write-Output 'SerialMate health check (discovery, --help, --list-instances only)
 $resolvedExecutable = Resolve-SerialMate
 
 if (-not $resolvedExecutable -or -not (Test-Path -LiteralPath $resolvedExecutable -PathType Leaf)) {
-    Write-CheckResult 'Executable' $false 'SerialMate.exe not found. Set SERIALMATE_EXE, add it to PATH, or pass -ExecutablePath.'
+    Write-CheckResult 'Executable' $false '未找到SerialMate。请安装SerialMate或提供SerialMate.exe路径。'
     exit 1
 }
 

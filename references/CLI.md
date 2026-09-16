@@ -13,6 +13,12 @@ SerialMate.exe --pid <pid> capabilities
 
 先确认可执行文件和 `AutomationProtocolVersion=1`，再根据 `--list-ports` 选择设备、根据 `--list-instances` 选择实例。输出中的 `pid` 与 `instanceId` 共同构成实例身份。
 
+## 实例优先发现
+
+路径发现之前先检查正在运行的 `SerialMate.exe`。从运行进程取得实际可执行文件路径，用该路径执行 `--list-instances`；只要返回可用实例，就直接通过 Automation Protocol 控制，不要求用户提供 EXE 路径或配置 PATH。
+
+没有实例时，按 `SERIALMATE_EXE`、PATH、`C:\Program Files\SerialMate\SerialMate.exe`、`%LOCALAPPDATA%\SerialMate\SerialMate.exe`、当前目录 `tools\SerialMate.exe`、当前目录 `bin\SerialMate.exe` 的顺序搜索。找到 EXE 后可启动 SerialMate，最多等待 10 秒并再次执行 `--list-instances`。超时后停止等待并如实报告，不循环启动多个 GUI。
+
 ## JSON 与退出码
 
 标准输出是一个 UTF-8 JSON 值加换行；诊断信息属于 stderr。成功和失败 envelope 分别为：

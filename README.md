@@ -1,6 +1,6 @@
 # SerialMate-Skill
 
-SerialMate-Skill v1.0.0 是一个供 Codex 使用 SerialMate CLI 的 Skill。它把串口发现、实例选择、状态确认、发送和增量读取组织成安全、可复用的工作流。
+SerialMate-Skill v1.0.1 是一个供 Codex 使用 SerialMate CLI 的 Skill。它把串口发现、实例选择、状态确认、发送和增量读取组织成安全、可复用的工作流。
 
 本仓库独立于 `chenz-ruo/SerialMate`，不包含 SerialMate 程序、串口驱动或 Python 串口实现。
 
@@ -13,7 +13,7 @@ SerialMate-Skill v1.0.0 是一个供 Codex 使用 SerialMate CLI 的 Skill。它
 - 依赖 SerialMate 的公开接口：`AUTOMATION.md`、`AUTOMATION_PROTOCOL.md`、`SerialMate.exe --help`、`SerialMate.exe capabilities`。
 - 当前冻结的 `AutomationProtocolVersion=1` 支持：`--list-instances`、`--list-ports`、`ping`、`capabilities`、`status`、`open`、`close`、`send-hex`、`send-text`、`read`。
 - 一个 SerialMate 进程最多拥有一个 COM；多个 COM 使用多个实例。
-- 发现顺序：`SERIALMATE_EXE` → PATH 中的 `SerialMate.exe` → 用户提供的路径。
+- 发现顺序：运行中的 SerialMate 实例 → `SERIALMATE_EXE` → PATH → `C:\Program Files\SerialMate` → `%LOCALAPPDATA%\SerialMate` → 当前目录的 `tools`/`bin` → 用户提供的路径。
 
 ## 仓库结构
 
@@ -43,7 +43,7 @@ scripts/
 .\scripts\check_serialmate.ps1 -ExecutablePath 'C:\\Tools\\SerialMate.exe'
 ```
 
-脚本只检查可执行文件与版本，并以 10 秒超时运行 `--help` 和 `--list-instances`；不会打开或关闭任何 COM 口。
+脚本会优先从运行中的 SerialMate 进程取得可执行文件路径，再检查其它标准位置。它只检查可执行文件与版本，并以 10 秒超时运行 `--help` 和 `--list-instances`；不会启动 GUI，也不会打开或关闭任何 COM 口。
 
 ## 来源维护
 
